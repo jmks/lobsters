@@ -215,7 +215,6 @@ class Story < ApplicationRecord
     url = url.to_s.gsub(']', '\\]')
     urls = [url.to_s.gsub(/(#.*)/, "")]
     urls2 = [url.to_s.gsub(/(#.*)/, "")]
-    urls_with_trailing_pound = []
 
     # https
     urls.each do |u|
@@ -243,15 +242,14 @@ class Story < ApplicationRecord
     urls = urls2.uniq
 
     # trailing pound
-    urls.each do |u|
-      urls_with_trailing_pound.push u + "#"
-    end
+    urls_with_trailing_pound = urls.map {|u| u + "#" }
+    moderated_regex = Regexp.escape(urls_with_trailing_pound.join(".|"))
 
     # if a previous submission was moderated, return it to block it from being
     # submitted again
     Story
       .where(:url => urls)
-      .or(Story.where("url RLIKE ?", urls_with_trailing_pound.join(".|")))
+      .or(Story.where("url RLIKE ?", moderated_regex))
       .where("is_expired = ? OR is_moderated = ?", false, true)
   end
 
